@@ -110,15 +110,72 @@ def get_frames_and_events(matches_df: pd.DataFrame) -> tuple:
 
     events = pd.concat(events_df_ls).reset_index(drop = True)
 
+    col_origin = [
+        "match_date", "competition_competition_name", "home_team_home_team_gender",
+        "home_team_home_team_name", "away_team_away_team_name",
+    ]
+
+    col_destination = [
+        "match_date", "competition_name", "gender",
+        "home_team_name", "away_team_name"
+    ]
+
+    events[col_destination] = events.apply(
+        lambda x : matches[matches["match_id"] == x["match_id"]].iloc[0][col_origin],
+        axis = 1, result_type = "expand"
+    )
+
     return frames, events
 
 
+def get_passes(events_df: pd.DataFrame, frames_df: pd.DataFrame) -> pd.DataFrame:
+    """Get a DataFrame with the passes and relevent data
+    from a DataFrame of events and a DataFrame of freeze frames.
+
+    Inputs:
+        events_df: A pd.DataFrame with a list of events
+        frames_df: A pd.DataFrame with the freeze frames
+
+    Returns:
+        A pandas DataFrame with all the passes and their associated freeze frames"""
+
+    passes = events_df[events_df["type_name"] == "Pass"].reset_index(drop = True)
+
+    columns_to_keep = [
+        "id", "match_date", "competition_name", "gender",
+        "home_team_name", "away_team_name",
+        "index", "period", "timestamp", "minute", "second",
+        "possession", "duration", "type_id", "type_name",
+        "possession_team_id", "possession_team_name", "play_pattern_id",
+        "play_pattern_name", "team_id", "team_name", "related_events",
+        "location", "player_id", "player_name", "position_id",
+        "position_name", "pass_recipient_id", "pass_recipient_name",
+        "pass_length", "pass_angle", "pass_height_id", "pass_height_name",
+        "pass_end_location", "pass_body_part_id", "pass_body_part_name",
+        "pass_type_id", "pass_type_name", "pass_cross", "pass_outcome_id",
+        "pass_outcome_name", "under_pressure", "pass_assisted_shot_id",
+        "pass_shot_assist", "off_camera", "pass_deflected", "counterpress",
+        "pass_aerial_won", "pass_switch", "out", "pass_outswinging",
+        "pass_technique_id", "pass_technique_name", "pass_cut_back",
+        "pass_goal_assist", "pass_through_ball", "pass_miscommunication",
+        "match_id", "pass_no_touch", "pass_straight", "pass_inswinging"
+        ]
+
+    passes = passes[columns_to_keep]
+
+    passes = passes.merge(
+        frames_df, how = "left", left_on = "id", right_on = "event_uuid")
+
+    return passes
+
 
 if __name__ == "__main__":
-    competitions = get_competitions(three_sixty=True, gender="female")
+    competitions = get_competitions(three_sixty = True, gender = "female")
     print("competitions: Done")
     matches = get_matches(competitions)
     print("matches: Done")
     frames, events = get_frames_and_events(matches)
     print("freeze frames and events: Done")
-    print(frames)
+    passes = get_passes(events, frames)
+    print("passes: Done")
+    print(passes.sample(1).iloc[0])
