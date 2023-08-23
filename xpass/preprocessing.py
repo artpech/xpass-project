@@ -5,7 +5,12 @@ import pandas as pd
 from xpass.params import STATSBOMB_DATA, THREE_SIXTY, MATCHES, EVENTS, GENDER
 from xpass.utils import get_reception_shape_features
 
-from sklearn.preprocessing import FunctionTransformer
+# from sklearn.preprocessing import FunctionTransformer
+
+from sklearn.preprocessing import MinMaxScaler, OneHotEncoder
+from sklearn.impute import SimpleImputer
+from sklearn.pipeline import make_pipeline
+from sklearn.compose import make_column_transformer, make_column_selector
 from sklearn.base import TransformerMixin, BaseEstimator
 
 
@@ -36,3 +41,26 @@ class ReceptionTransformer(TransformerMixin, BaseEstimator):
         X_transformed = X.drop(columns = "freeze_frame")
 
         return X_transformed
+
+
+num_col = make_column_selector(dtype_include=["float64", "int64"])
+num_tranformer = make_pipeline(
+    SimpleImputer(strategy = "mean"),
+    MinMaxScaler()
+)
+
+cat_col = make_column_selector(dtype_include=["object"])
+cat_transformer = make_pipeline(
+    SimpleImputer(strategy = "most_frequent"),
+    OneHotEncoder(handle_unknown = "ignore")
+)
+
+preprocessing = make_column_transformer(
+    (num_tranformer, num_col),
+    (cat_transformer, cat_col)
+)
+
+pipeline = make_pipeline(
+    ReceptionTransformer(),
+    preprocessing
+)
