@@ -166,30 +166,11 @@ def get_passes(events_df: pd.DataFrame, frames_df: pd.DataFrame) -> pd.DataFrame
     passes = passes.merge(
         frames_df, how = "left", left_on = "id", right_on = "event_uuid")
 
+    passes = passes[~passes["freeze_frame"].isnull()]
+    passes["location_x"] = passes["location"].map(lambda x : x[0])
+    passes["location_y"] = passes["location"].map(lambda x : x[1])
+
     return passes
-
-
-def get_passes_clean(passes_df: pd.DataFrame) -> pd.DataFrame:
-    """Clean the passes DataFrame (remove uninterpretable passes and only keep
-    useful pass features)
-
-    Input:
-        passes_df (pd.DataFrame): The original passes DataFrame, with all features
-
-    Returns:
-        a clean pd.DataFrame with usefull passes and pass features only
-
-    """
-
-    useful_col = [
-        "location", "play_pattern_name", "pass_angle", "pass_height_id",
-        "pass_body_part_name", "freeze_frame", "pass_outcome_name"]
-
-    passes_clean = passes_df[~passes_df["freeze_frame"].isnull()][useful_col]
-    passes_clean["location_x"] = passes_clean["location"].map(lambda x : x[0])
-    passes_clean["location_y"] = passes_clean["location"].map(lambda x : x[1])
-
-    return passes_clean
 
 
 if __name__ == "__main__":
@@ -201,7 +182,4 @@ if __name__ == "__main__":
     print("freeze frames and events: Done")
     passes = get_passes(events, frames)
     print("passes: Done")
-    #print(passes.sample(1).iloc[0])
-    passes_clean = get_passes_clean(passes)
-    print("passes_clean: Done")
-    print(passes_clean.sample(1).iloc[0])
+    print(passes.sample(1).iloc[0])
