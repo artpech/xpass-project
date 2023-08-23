@@ -167,13 +167,38 @@ def get_passes(events_df: pd.DataFrame, frames_df: pd.DataFrame) -> pd.DataFrame
         frames_df, how = "left", left_on = "id", right_on = "event_uuid")
 
     passes = passes[~passes["freeze_frame"].isnull()]
-    passes["location_x"] = passes["location"].map(lambda x : x[0])
-    passes["location_y"] = passes["location"].map(lambda x : x[1])
-
-    failure = ["Incomplete", "Out", "Pass Offside"]
-    passes["success"] = passes["pass_outcome_name"].map(lambda x: int(x not in failure))
 
     return passes
+
+
+def get_passes_preprocessed(passes_df: pd.DataFrame) -> pd.DataFrame:
+    """Returns the DataFrame of passes for ML pipeline
+
+    Inputs:
+        passes_df (pd.DataFrame): The pd.DataFrame of passes
+
+    Returns:
+        A preprocessed passes pd.DataFrame
+
+    """
+
+    passes_df["location_x"] = passes_df["location"].map(lambda x : x[0])
+    passes_df["location_y"] = passes_df["location"].map(lambda x : x[1])
+
+    failure = ["Incomplete", "Out", "Pass Offside"]
+    passes_df["success"] = passes_df["pass_outcome_name"].map(lambda x: int(x not in failure))
+
+    useful_col = [
+        "location_x", "location_y", "play_pattern_name",
+        "pass_angle", "pass_height_id", "pass_body_part_name",
+        "freeze_frame", "success"]
+
+    passes_preprocessed = passes_df[useful_col]
+
+    return passes_preprocessed
+
+
+
 
 
 if __name__ == "__main__":
