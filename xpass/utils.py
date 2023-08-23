@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 import matplotlib.pyplot as plt
 from matplotlib.path import Path
@@ -94,3 +95,38 @@ def get_players_within_polygon(freeze_frame: list, reception_shape: shapely.Poly
     result = {"teammates" : n_teammates, "opponents" : n_opponents}
 
     return result
+
+
+def get_reception_shape_features(
+    row: pd.Series,
+    corr_width: float = 2,
+    alpha: float = 10,
+    length: float = 50):
+    """This function takes a dataframe row that represents a pass and returns
+    the number of teammates and opponents within the reception shape
+    at the moment of the pass
+
+    Inputs:
+        row (pd.Series) : a pd.DataFrame row representing a pass
+        corr_width (float): the with of the central corridor in yards
+        alpha (float): the angle of the reception shape in degrees
+        length (float): the length of the reception shape in yards
+
+    Returns:
+        A tuple of two integers (i.e. the number of teammates and opponents
+        within the reception shape when the pass is made)
+
+    """
+
+    freeze_frame = row["freeze_frame"]
+    reception_shape = create_reception_shape(
+        x = row["location_x"], y = row["location_y"],
+        corr_width = corr_width, alpha = alpha, length = length,
+        rotation_angle = row["pass_angle"]
+    )
+
+    players = get_players_within_polygon(freeze_frame, reception_shape)
+    n_teammates = players["teammates"]
+    n_opponents = players["opponents"]
+
+    return n_teammates, n_opponents
