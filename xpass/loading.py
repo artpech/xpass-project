@@ -170,6 +170,9 @@ def get_passes(events_df: pd.DataFrame, frames_df: pd.DataFrame) -> pd.DataFrame
     passes["location_x"] = passes["location"].map(lambda x : x[0])
     passes["location_y"] = passes["location"].map(lambda x : x[1])
 
+    failure = ["Incomplete", "Out", "Pass Offside"]
+    passes["success"] = passes["pass_outcome_name"].map(lambda x: int(x not in failure))
+
     return passes
 
 
