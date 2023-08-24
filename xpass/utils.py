@@ -7,9 +7,12 @@ import matplotlib.pyplot as plt
 from matplotlib.path import Path
 from matplotlib.patches import PathPatch
 from matplotlib.collections import PatchCollection
+import seaborn as sns
 
 import shapely
 from shapely import affinity
+
+from mplsoccer import Pitch
 
 
 def create_reception_shape(
@@ -55,20 +58,6 @@ def create_reception_shape(
             )
 
     return reception_shape
-
-
-def plot_polygon(ax, poly, **kwargs) -> PatchCollection:
-    """Plots a Polygon to pyplot `ax`"""
-    path = Path.make_compound_path(
-        Path(np.asarray(poly.exterior.coords)[:, :2]),
-        *[Path(np.asarray(ring.coords)[:, :2]) for ring in poly.interiors])
-
-    patch = PathPatch(path, **kwargs)
-    collection = PatchCollection([patch], **kwargs)
-
-    ax.add_collection(collection, autolim=True)
-    ax.autoscale_view()
-    return collection
 
 
 def get_players_within_polygon(freeze_frame: list, reception_shape: shapely.Polygon) -> dict:
@@ -135,3 +124,98 @@ def get_reception_shape_features(
     n_opponents = players["opponents"]
 
     return n_teammates, n_opponents
+
+
+def plot_polygon(ax, poly, **kwargs) -> PatchCollection:
+    """Plots a Polygon to pyplot `ax`"""
+    path = Path.make_compound_path(
+        Path(np.asarray(poly.exterior.coords)[:, :2]),
+        *[Path(np.asarray(ring.coords)[:, :2]) for ring in poly.interiors])
+
+    patch = PathPatch(path, **kwargs)
+    collection = PatchCollection([patch], **kwargs)
+
+    ax.add_collection(collection, autolim=True)
+    ax.autoscale_view()
+    return collection
+
+
+def plot_pass(
+    pass_row: pd.Series, corr_width: float = 2, length: float = 50,
+    alpha: float = 10, ax = None
+    ):
+    """Plot a pass on a football pitch
+    Inputs:
+        pass_row (pd.Series): a DataFrame row representing a pass (with a freeze frame column)
+        corr_width (float): the with of the central corridor in yards
+        alpha (float): the angle of the reception shape in degrees
+        length (float): the length of the reception shape in yards
+        ax (matplotlib.axes): a matplotlib axes (default is None)
+
+    Returns:
+        A matplotlib axes
+    """
+
+    pitch = Pitch(
+        pitch_type = "statsbomb",
+        pitch_color = "grass",
+        line_color = "white",
+        goal_type = "box",
+        stripe = True,
+        linewidth = 1,
+        axis = True,
+        label = True
+        )
+
+    if ax is None:
+        ax = plt.gca()
+
+    pitch.draw(ax = ax)
+
+    freeze_frame = pass_row["freeze_frame"]
+    if isinstance(freeze_frame, str):
+        freeze_frame = ast.literal_eval(freeze_frame)
+
+    frame_df = pd.DataFrame.from_dict(freeze_frame)
+    frame_df["x"] = frame_df["location"].map(lambda x : x[0])
+    frame_df["y"] = frame_df["location"].map(lambda x : x[1])
+
+    sns.scatterplot(
+        data = frame_df,
+        x = "x",
+        y = "y",
+        hue  = "teammate",
+        ax = ax
+    )
+
+    start_location = pass_row["location"]
+    if isinstance(start_location, str):
+        start_location = ast.literal_eval(start_location)
+    end_location = pass_row["pass_end_location"]
+    if isinstance(end_location, str):
+        end_location = ast.literal_eval(end_location)
+
+    ax.arrow(
+        start_location[0],
+        start_location[1],
+        end_location[0] - start_location[0],
+        end_location[1] - start_location[1],
+        head_width = 3,
+        head_length = 2,
+        width = 0.2,
+        fc = "black",
+        ec = "black"
+    )
+
+    reception_shape = create_reception_shape(
+        x = start_location[0],
+        y = start_location[1],
+        corr_width = corr_width,
+        length = length,
+        alpha = alpha,
+        rotation_angle = pass_row["pass_angle"]
+    )
+
+    plot_polygon(ax, poly = reception_shape, facecolor = "lightblue", alpha = 0.6)
+
+    return ax
