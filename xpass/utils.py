@@ -1,3 +1,5 @@
+import ast
+
 import numpy as np
 import pandas as pd
 
@@ -82,6 +84,9 @@ def get_players_within_polygon(freeze_frame: list, reception_shape: shapely.Poly
 
     n_teammates = 0
     n_opponents = 0
+
+    if isinstance(freeze_frame, str):
+        freeze_frame = ast.literal_eval(freeze_frame)
 
     for player in freeze_frame:
         is_within = all([not player["actor"], reception_shape.contains(
