@@ -24,11 +24,7 @@ def get_competitions() -> pd.DataFrame:
         competitions = pd.read_csv(csv_file)
 
     else:
-
-        competitions = pd.read_json(
-            os.path.join(os.path.join(STATSBOMB_DATA, "competitions.json"))
-            )
-
+        competitions = pd.read_json(os.path.join(STATSBOMB_DATA, "competitions.json"))
         competitions = competitions[~competitions["match_available_360"].isnull()]
 
         if GENDER.lower() in ["male", "female"]:
@@ -247,13 +243,13 @@ def get_passes_preprocessed(passes_df: pd.DataFrame) -> pd.DataFrame:
 if __name__ == "__main__":
     competitions = get_competitions()
     print("competitions: Done")
-    matches = get_matches(competitions)
-    print("matches: Done")
-    frames, events = get_frames_and_events(matches)
-    print("freeze frames and events: Done")
-    passes = get_passes(events, frames)
-    print("passes: Done")
-    print(passes.sample(1).iloc[0])
-    passes_preprocessed = get_passes_preprocessed(passes)
-    print("passes preprocessed: Done")
-    print(passes_preprocessed.sample(1).iloc[0])
+    # matches = get_matches(competitions)
+    # print("matches: Done")
+    # frames, events = get_frames_and_events(matches)
+    # print("freeze frames and events: Done")
+    # passes = get_passes(events, frames)
+    # print("passes: Done")
+    # print(passes.sample(1).iloc[0])
+    # passes_preprocessed = get_passes_preprocessed(passes)
+    # print("passes preprocessed: Done")
+    # print(passes_preprocessed.sample(1).iloc[0])
