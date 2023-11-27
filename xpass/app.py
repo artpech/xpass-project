@@ -1,6 +1,7 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 from xpass.utils import plot_pass
 
@@ -13,7 +14,7 @@ for team in teams:
 
     with st.expander(f"{team}"):
         st.write()
-        n_players = st.slider(f"Number of players on {team}", 1, 11, 1)
+        n_players = st.number_input(f"Number of players on {team}", 1, 11, step = 1, format = "%i")
         if team == "Home Team":
             n_home_players = n_players
         col1, col2 = st.columns(2)
@@ -41,18 +42,29 @@ freeze_frame[passer - 1]["actor"] = True
 x_start = freeze_frame[passer - 1]["location"][0]
 y_start = freeze_frame[passer - 1]["location"][1]
 pass_length = np.sqrt((x_end - x_start) ** 2 + (y_end - y_start) ** 2)
-pass_angle = np.arctan((y_end - y_start) / (x_end - x_start))
+if y_end >= y_start:
+    pass_angle = np.arccos((x_end - x_start) / pass_length)
+else:
+    pass_angle = - 1 * np.arccos((x_end - x_start) / pass_length)
 
 st.write(f"Pass length: {pass_length}")
 st.write(f"Pass angle: {pass_angle}")
 st.write(f"Freeze frame: {str(freeze_frame)}")
 
-# cols = ["location", "pass_end_location", "pass_angle", "freeze_frame"]
-# data = [[
-#     [x_start, y_start],
-#     [x_end, y_end],
-#     pass_angle,
-#     freeze_frame
-# ]]
-# pass_df = pd.DataFrame(
-# )
+cols = ["location", "pass_end_location", "pass_angle", "freeze_frame"]
+data = [[
+    [x_start, y_start],
+    [x_end, y_end],
+    pass_angle,
+    freeze_frame
+]]
+pass_df = pd.DataFrame(
+    data = data,
+    columns = cols
+)
+
+st.dataframe(pass_df)
+
+fig, ax = plt.subplots()
+ax = plot_pass(pass_df.iloc[0])
+st.pyplot(fig)
