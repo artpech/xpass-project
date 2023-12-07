@@ -226,6 +226,7 @@ def get_passes_preprocessed(passes_df: pd.DataFrame, balance_ratio = 2) -> pd.Da
         passes_df["location_x"] = passes_df["location"].map(lambda x : x[0])
         passes_df["location_y"] = passes_df["location"].map(lambda x : x[1])
 
+        passes_df[~passes_df["pass_outcome_name"].isin(["Unknown", "Injury Clearance"])]
         failure = ["Incomplete", "Out", "Pass Offside"]
         passes_df["success"] = passes_df["pass_outcome_name"].map(lambda x: int(x not in failure))
 
