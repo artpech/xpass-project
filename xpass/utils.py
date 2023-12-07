@@ -219,3 +219,24 @@ def plot_pass(
     plot_polygon(ax, poly = reception_shape, facecolor = "lightblue", alpha = 0.6)
 
     return ax
+
+
+def return_as_list(el):
+    """Takes a list or a list-typed string as an input
+    and returns the list that match the input.
+    Eg.
+        el = "[61.0, 40.1]"
+        return_as_list(el)
+        >> ['61.0', '40.1']
+    """
+    if  isinstance(el, list):
+        return el
+    else:
+        try:
+            result = ast.literal_eval(el)
+            if isinstance(result, list):
+                return result
+            else:
+                raise Exception("input is not a list or a list-typed string")
+        except:
+            raise Exception("input is not a list or a list-typed string")
