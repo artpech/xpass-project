@@ -202,11 +202,14 @@ def get_passes(events_df: pd.DataFrame, frames_df: pd.DataFrame) -> pd.DataFrame
     return passes
 
 
-def get_passes_preprocessed(passes_df: pd.DataFrame) -> pd.DataFrame:
+def get_passes_preprocessed(passes_df: pd.DataFrame, balance_ratio = 2) -> pd.DataFrame:
     """Returns the DataFrame of passes for ML pipeline
 
     Inputs:
         passes_df (pd.DataFrame): The pd.DataFrame of passes
+        balance_ratio (int): The ratio between the number of sucessful and unsuccesful passes.
+            Default ratio is 2. Specify a ratio of 1 for exact same number of sucessful
+            and unsuccesful passes. Specify "None" to keep imbalanced data.
 
     Returns:
         A preprocessed passes pd.DataFrame
@@ -234,6 +237,14 @@ def get_passes_preprocessed(passes_df: pd.DataFrame) -> pd.DataFrame:
         passes_preprocessed = passes_df[useful_col]
 
         passes_preprocessed.to_csv(csv_file, index = False)
+
+    if balance_ratio:
+        print(f"Balancing the data with a ratio of {balance_ratio} between successful and unsuccessful passes...")
+        n_unsuccesful = passes_preprocessed["success"].value_counts()[0]
+        passes_preprocessed_0 = passes_preprocessed[passes_preprocessed["success"] == 0]
+        passes_preprocessed_1 = passes_preprocessed[passes_preprocessed["success"] == 1].sample(balance_ratio * n_unsuccesful)
+        passes_preprocessed = pd.concat([passes_preprocessed_0, passes_preprocessed_1]).sample(frac = 1)
+        print("Data was correctly balanced.")
 
     return passes_preprocessed
 
