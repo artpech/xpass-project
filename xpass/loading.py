@@ -1,11 +1,12 @@
 """Load the data from the Statsbomb open data folder."""
 
 import os
+
 import json
 import pandas as pd
 
 from xpass.params import PROJECT_HOME, STATSBOMB_DATA, THREE_SIXTY, MATCHES, EVENTS, GENDER
-
+from xpass.utils import return_as_list
 
 def get_data():
     pass
@@ -218,7 +219,7 @@ def get_passes_preprocessed(passes_df: pd.DataFrame) -> pd.DataFrame:
         passes_preprocessed = pd.read_csv(csv_file)
 
     else:
-
+        passes_df["location"] = passes_df["location"].map(return_as_list)
         passes_df["location_x"] = passes_df["location"].map(lambda x : x[0])
         passes_df["location_y"] = passes_df["location"].map(lambda x : x[1])
 
