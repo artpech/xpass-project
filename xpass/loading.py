@@ -5,8 +5,11 @@ import os
 import json
 import pandas as pd
 
+from sklearn.model_selection import train_test_split
+
 from xpass.params import PROJECT_HOME, STATSBOMB_DATA, THREE_SIXTY, MATCHES, EVENTS, GENDER
 from xpass.utils import return_as_list
+
 
 def get_data():
     pass
@@ -203,8 +206,30 @@ def get_passes(events_df: pd.DataFrame, frames_df: pd.DataFrame) -> pd.DataFrame
     return passes
 
 
-def train_test_validate(passes_df: pd.DataFrame):
-    pass
+def split_dataset(passes_df: pd.DataFrame, test_size: float, validation_size: float) -> tuple:
+    """Split the full passes dataset into a train, a test and a validation dataset.
+
+    Inputs:
+        passes_df (pd.DataFrame): The pd.DataFrame of passes
+        test_size (float): Should be between 0.0 and 1.0 and represent
+            the proportion of the full dataset to include in the test split
+        validation_size (float): Should be between 0.0 and 1.0 and represent
+            the proportion of the full dataset to include in the test split
+
+    Returns:
+        splitting (tuple): tuple containing train-test-validation split of inputed passes_df
+    """
+
+    if test_size + validation_size >= 1:
+        raise Exception("test_size and validation_size excede 1")
+
+    train_and_test, validation = train_test_split(passes_df, test_size = validation_size)
+
+    new_test_size = test_size / (1 - validation_size)
+    train, test = train_test_split(train_and_test, test_size = new_test_size)
+
+    splitting = (train, test, validation)
+    return splitting
 
 
 def get_passes_preprocessed(passes_df: pd.DataFrame, balance_ratio = 2) -> pd.DataFrame:
