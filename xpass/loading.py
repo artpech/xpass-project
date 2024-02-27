@@ -196,10 +196,15 @@ def get_passes(events_df: pd.DataFrame, frames_df: pd.DataFrame) -> pd.DataFrame
             frames_df, how = "left", left_on = "id", right_on = "event_uuid")
 
         passes = passes[~passes["freeze_frame"].isnull()]
+        passes = passes[~passes["pass_outcome_name"].isin(["Unknown", "Injury Clearance"])]
 
         passes.to_csv(csv_file, index = False)
 
     return passes
+
+
+def train_test_validate(passes_df: pd.DataFrame):
+    pass
 
 
 def get_passes_preprocessed(passes_df: pd.DataFrame, balance_ratio = 2) -> pd.DataFrame:
@@ -226,7 +231,7 @@ def get_passes_preprocessed(passes_df: pd.DataFrame, balance_ratio = 2) -> pd.Da
         passes_df["location_x"] = passes_df["location"].map(lambda x : x[0])
         passes_df["location_y"] = passes_df["location"].map(lambda x : x[1])
 
-        passes_df[~passes_df["pass_outcome_name"].isin(["Unknown", "Injury Clearance"])]
+        # passes_df[~passes_df["pass_outcome_name"].isin(["Unknown", "Injury Clearance"])]
         failure = ["Incomplete", "Out", "Pass Offside"]
         passes_df["success"] = passes_df["pass_outcome_name"].map(lambda x: int(x not in failure))
 
