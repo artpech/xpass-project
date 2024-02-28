@@ -7,7 +7,7 @@ import pandas as pd
 
 from sklearn.model_selection import train_test_split
 
-from xpass.params import PROJECT_HOME, STATSBOMB_DATA, THREE_SIXTY, MATCHES, EVENTS, GENDER
+from xpass.params import PROJECT_HOME, STATSBOMB_DATA, THREE_SIXTY, MATCHES, EVENTS, GENDER, SIZE, SIZE_MAP
 from xpass.utils import return_as_list
 
 
@@ -164,7 +164,7 @@ def get_passes(events_df: pd.DataFrame, frames_df: pd.DataFrame) -> pd.DataFrame
     Returns:
         A pandas DataFrame with all the passes and their associated freeze frames"""
 
-    csv_file = os.path.join(PROJECT_HOME, "data", f"passes_{GENDER}.csv")
+    csv_file = os.path.join(PROJECT_HOME, "data", f"passes_{GENDER}_{SIZE}.csv")
 
     if os.path.isfile(csv_file):
         passes = pd.read_csv(csv_file)
@@ -172,6 +172,14 @@ def get_passes(events_df: pd.DataFrame, frames_df: pd.DataFrame) -> pd.DataFrame
     else:
 
         passes = events_df[events_df["type_name"] == "Pass"].reset_index(drop = True)
+
+        if SIZE in ["S", "M"]:
+            n_rows = SIZE_MAP[SIZE]
+            passes = passes.sample(n_rows).reset_index(drop = True)
+        elif SIZE == "L":
+            pass
+        else:
+            raise Exception(f"{SIZE} should be either 'S', 'M' or 'L'")
 
         columns_to_keep = [
             "id", "match_date", "competition_name", "gender",
@@ -232,11 +240,12 @@ def split_dataset(passes_df: pd.DataFrame, test_size: float, validation_size: fl
     return splitting
 
 
-def get_passes_preprocessed(passes_df: pd.DataFrame, balance_ratio = None) -> pd.DataFrame:
+def get_passes_preprocessed(passes_df: pd.DataFrame, dataset: str, balance_ratio: int = None) -> pd.DataFrame:
     """Returns the DataFrame of passes for ML pipeline
 
     Inputs:
         passes_df (pd.DataFrame): The pd.DataFrame of passes
+        dataset (str): The dataset type. Set to "train", "test" or "validation".
         balance_ratio (int): The ratio between the number of sucessful and unsuccesful passes.
             Default ratio is None. Set a ratio of 1 for exact same number of sucessful
             and unsuccesful passes. Set to "None" to keep imbalanced data.
@@ -246,7 +255,7 @@ def get_passes_preprocessed(passes_df: pd.DataFrame, balance_ratio = None) -> pd
 
     """
 
-    csv_file = os.path.join(PROJECT_HOME, "data", f"passes_preprocessed_{GENDER}.csv")
+    csv_file = os.path.join(PROJECT_HOME, "data", f"{dataset}_preprocessed_{GENDER}_{SIZE}.csv")
 
     if os.path.isfile(csv_file):
         passes_preprocessed = pd.read_csv(csv_file)
@@ -267,15 +276,15 @@ def get_passes_preprocessed(passes_df: pd.DataFrame, balance_ratio = None) -> pd
 
         passes_preprocessed = passes_df[useful_col]
 
-        passes_preprocessed.to_csv(csv_file, index = False)
+        if balance_ratio:
+            print(f"Balancing the data with a ratio of {balance_ratio} between successful and unsuccessful passes...")
+            n_unsuccesful = passes_preprocessed["success"].value_counts()[0]
+            passes_preprocessed_0 = passes_preprocessed[passes_preprocessed["success"] == 0]
+            passes_preprocessed_1 = passes_preprocessed[passes_preprocessed["success"] == 1].sample(balance_ratio * n_unsuccesful)
+            passes_preprocessed = pd.concat([passes_preprocessed_0, passes_preprocessed_1]).sample(frac = 1)
+            print("Data was correctly balanced.")
 
-    if balance_ratio:
-        print(f"Balancing the data with a ratio of {balance_ratio} between successful and unsuccessful passes...")
-        n_unsuccesful = passes_preprocessed["success"].value_counts()[0]
-        passes_preprocessed_0 = passes_preprocessed[passes_preprocessed["success"] == 0]
-        passes_preprocessed_1 = passes_preprocessed[passes_preprocessed["success"] == 1].sample(balance_ratio * n_unsuccesful)
-        passes_preprocessed = pd.concat([passes_preprocessed_0, passes_preprocessed_1]).sample(frac = 1)
-        print("Data was correctly balanced.")
+        passes_preprocessed.to_csv(csv_file, index = False)
 
     return passes_preprocessed
 
