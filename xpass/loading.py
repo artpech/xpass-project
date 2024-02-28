@@ -232,14 +232,14 @@ def split_dataset(passes_df: pd.DataFrame, test_size: float, validation_size: fl
     return splitting
 
 
-def get_passes_preprocessed(passes_df: pd.DataFrame, balance_ratio = 2) -> pd.DataFrame:
+def get_passes_preprocessed(passes_df: pd.DataFrame, balance_ratio = None) -> pd.DataFrame:
     """Returns the DataFrame of passes for ML pipeline
 
     Inputs:
         passes_df (pd.DataFrame): The pd.DataFrame of passes
         balance_ratio (int): The ratio between the number of sucessful and unsuccesful passes.
-            Default ratio is 2. Specify a ratio of 1 for exact same number of sucessful
-            and unsuccesful passes. Specify "None" to keep imbalanced data.
+            Default ratio is None. Set a ratio of 1 for exact same number of sucessful
+            and unsuccesful passes. Set to "None" to keep imbalanced data.
 
     Returns:
         A preprocessed passes pd.DataFrame
