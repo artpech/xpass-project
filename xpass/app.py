@@ -12,22 +12,22 @@ st.write("Welcome to the xpass-project app.")
 
 with st.sidebar:
 
-    teams = ["Home Team", "Away Team"]
+    teams = ["Teammates", "Opponents"]
     freeze_frame = []
 
     for team in teams:
 
         with st.expander(f"{team}"):
             st.write()
-            n_players = st.number_input(f"Number of players on {team}", 1, 11, step = 1, format = "%i")
-            if team == "Home Team":
+            n_players = st.number_input(f"Number of players on team {team}", 1, 11, step = 1, format = "%i")
+            if team == "Teammates":
                 n_home_players = n_players
             col1, col2 = st.columns(2)
             for i in range(n_players):
                 x_i = col1.number_input(f"Coordinate x for player {i+1}", 0, 120, 60, key = f"{team}_{i}_x")
                 y_i = col2.number_input(f"Coordinate y for player {i+1}", 0, 80, 40, key = f"{team}_{i}_y")
                 player = {
-                    "teammate" : team == "Home Team",
+                    "teammate" : team == "Teammates",
                     "actor" : False,
                     "keeper" : False,
                     "location" : [ x_i, y_i ]
