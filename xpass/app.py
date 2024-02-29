@@ -18,30 +18,35 @@ st.write("Welcome to the xpass-project app.")
 
 # Load validation file
 
-val_file = os.path.join(PROJECT_HOME, "data", f"validation_{GENDER}_{SIZE}.csv")
-validation = pd.read_csv(val_file)
-sample_pass = validation.sample(1)
-val_freeze_frame = sample_pass.iloc[0]["freeze_frame"]
-val_freeze_frame = ast.literal_eval(val_freeze_frame)
-teammates = [dct for dct in val_freeze_frame if dct["teammate"]]
-opponents = [dct for dct in val_freeze_frame if not dct["teammate"]]
-end_loc_innit = ast.literal_eval(sample_pass.iloc[0]["pass_end_location"])
-end_loc_x_innit = end_loc_innit[0]
-end_loc_y_innit = end_loc_innit[1]
+@st.cache
+def innit_page_with_val_pass():
+    val_file = os.path.join(PROJECT_HOME, "data", f"validation_{GENDER}_{SIZE}.csv")
+    validation = pd.read_csv(val_file)
+    sample_pass = validation.sample(1)
+    val_freeze_frame = sample_pass.iloc[0]["freeze_frame"]
+    val_freeze_frame = ast.literal_eval(val_freeze_frame)
+    teammates = [dct for dct in val_freeze_frame if dct["teammate"]]
+    opponents = [dct for dct in val_freeze_frame if not dct["teammate"]]
+    end_loc_innit = ast.literal_eval(sample_pass.iloc[0]["pass_end_location"])
+    end_loc_x_innit = end_loc_innit[0]
+    end_loc_y_innit = end_loc_innit[1]
 
-
-teams_innit = {
-    "Teammates" : {
-        "n_players" : len(teammates),
-        "x" : [dct["location"][0] for dct in teammates],
-        "y" : [dct["location"][1] for dct in teammates]
-    },
-    "Opponents" : {
-        "n_players" : len(opponents),
-        "x" : [dct["location"][0] for dct in opponents],
-        "y" : [dct["location"][1] for dct in opponents]
+    teams_innit = {
+        "Teammates" : {
+            "n_players" : len(teammates),
+            "x" : [dct["location"][0] for dct in teammates],
+            "y" : [dct["location"][1] for dct in teammates]
+        },
+        "Opponents" : {
+            "n_players" : len(opponents),
+            "x" : [dct["location"][0] for dct in opponents],
+            "y" : [dct["location"][1] for dct in opponents]
+        }
     }
-}
+
+    return teams_innit, end_loc_x_innit, end_loc_y_innit
+
+teams_innit, end_loc_x_innit, end_loc_y_innit = innit_page_with_val_pass()
 
 with st.sidebar:
 
