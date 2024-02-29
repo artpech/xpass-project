@@ -8,6 +8,7 @@ from xpass.utils import plot_pass
 
 from mplsoccer import Pitch
 
+st.title("Demo - xpass-project")
 st.write("Welcome to the xpass-project app.")
 
 with st.sidebar:
