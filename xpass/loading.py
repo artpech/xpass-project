@@ -173,14 +173,6 @@ def get_passes(events_df: pd.DataFrame, frames_df: pd.DataFrame) -> pd.DataFrame
 
         passes = events_df[events_df["type_name"] == "Pass"].reset_index(drop = True)
 
-        if SIZE in ["S", "M"]:
-            n_rows = SIZE_MAP[SIZE]
-            passes = passes.sample(n_rows).reset_index(drop = True)
-        elif SIZE == "L":
-            pass
-        else:
-            raise Exception(f"{SIZE} should be either 'S', 'M' or 'L'")
-
         columns_to_keep = [
             "id", "match_date", "competition_name", "gender",
             "home_team_name", "away_team_name",
@@ -209,6 +201,14 @@ def get_passes(events_df: pd.DataFrame, frames_df: pd.DataFrame) -> pd.DataFrame
         passes = passes[~passes["freeze_frame"].isnull()]
         passes = passes[~passes["pass_outcome_name"].isin(["Unknown", "Injury Clearance"])]
 
+        if SIZE in ["S", "M"]:
+            n_rows = SIZE_MAP[SIZE]
+            passes = passes.sample(n_rows).reset_index(drop = True)
+        elif SIZE == "L":
+            pass
+        else:
+            raise Exception(f"{SIZE} should be either 'S', 'M' or 'L'")
+
         passes.to_csv(csv_file, index = False)
 
     return passes
@@ -228,24 +228,44 @@ def split_dataset(passes_df: pd.DataFrame, test_size: float, validation_size: fl
         splitting (tuple): tuple containing train-test-validation split of inputed passes_df
     """
 
-    if test_size + validation_size >= 1:
-        raise Exception("test_size and validation_size excede 1")
+    train_csv_file = os.path.join(PROJECT_HOME, "data", f"train_{GENDER}_{SIZE}.csv")
+    test_csv_file = os.path.join(PROJECT_HOME, "data", f"test_{GENDER}_{SIZE}.csv")
+    validation_csv_file = os.path.join(PROJECT_HOME, "data", f"validation_{GENDER}_{SIZE}.csv")
 
-    train_and_test, validation = train_test_split(passes_df, test_size = validation_size)
+    if all([
+        os.path.isfile(train_csv_file),
+        os.path.isfile(test_csv_file),
+        os.path.isfile(validation_csv_file)
+        ]
+    ):
+        train = pd.read_csv(train_csv_file)
+        test = pd.read_csv(test_csv_file)
+        validation = pd.read_csv(validation_csv_file)
 
-    new_test_size = test_size / (1 - validation_size)
-    train, test = train_test_split(train_and_test, test_size = new_test_size)
+    else:
+
+        if test_size + validation_size >= 1:
+            raise Exception("test_size and validation_size excede 1")
+
+        train_and_test, validation = train_test_split(passes_df, test_size = validation_size)
+
+        new_test_size = test_size / (1 - validation_size)
+        train, test = train_test_split(train_and_test, test_size = new_test_size)
+
+        train.to_csv(train_csv_file, index = False)
+        test.to_csv(test_csv_file, index = False)
+        validation.to_csv(validation_csv_file, index = False)
 
     splitting = (train, test, validation)
     return splitting
 
 
-def get_passes_preprocessed(passes_df: pd.DataFrame, dataset: str, balance_ratio: int = None) -> pd.DataFrame:
+def get_passes_preprocessed(passes_df: pd.DataFrame, dataset: str = None, balance_ratio: int = None) -> pd.DataFrame:
     """Returns the DataFrame of passes for ML pipeline
 
     Inputs:
         passes_df (pd.DataFrame): The pd.DataFrame of passes
-        dataset (str): The dataset type. Set to "train", "test" or "validation".
+        dataset (str): The dataset type. Set to "train", "test" or "validation". Default value is None.
         balance_ratio (int): The ratio between the number of sucessful and unsuccesful passes.
             Default ratio is None. Set a ratio of 1 for exact same number of sucessful
             and unsuccesful passes. Set to "None" to keep imbalanced data.
@@ -284,7 +304,8 @@ def get_passes_preprocessed(passes_df: pd.DataFrame, dataset: str, balance_ratio
             passes_preprocessed = pd.concat([passes_preprocessed_0, passes_preprocessed_1]).sample(frac = 1)
             print("Data was correctly balanced.")
 
-        passes_preprocessed.to_csv(csv_file, index = False)
+        if dataset:
+            passes_preprocessed.to_csv(csv_file, index = False)
 
     return passes_preprocessed
 
