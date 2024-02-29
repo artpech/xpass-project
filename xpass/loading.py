@@ -281,20 +281,21 @@ def get_passes_preprocessed(passes_df: pd.DataFrame, dataset: str = None, balanc
         passes_preprocessed = pd.read_csv(csv_file)
 
     else:
-        passes_df["location"] = passes_df["location"].map(return_as_list)
-        passes_df["location_x"] = passes_df["location"].map(lambda x : x[0])
-        passes_df["location_y"] = passes_df["location"].map(lambda x : x[1])
+        passes_preprocessed = passes_df.copy()
+        passes_preprocessed["location"] = passes_preprocessed["location"].map(return_as_list)
+        passes_preprocessed["location_x"] = passes_preprocessed["location"].map(lambda x : x[0])
+        passes_preprocessed["location_y"] = passes_preprocessed["location"].map(lambda x : x[1])
 
         # passes_df[~passes_df["pass_outcome_name"].isin(["Unknown", "Injury Clearance"])]
         failure = ["Incomplete", "Out", "Pass Offside"]
-        passes_df["success"] = passes_df["pass_outcome_name"].map(lambda x: int(x not in failure))
+        passes_preprocessed["success"] = passes_preprocessed["pass_outcome_name"].map(lambda x: int(x not in failure))
 
         useful_col = [
             "location_x", "location_y", "play_pattern_name",
             "pass_angle", "pass_height_id", "pass_body_part_name",
             "freeze_frame", "success"]
 
-        passes_preprocessed = passes_df[useful_col]
+        passes_preprocessed = passes_preprocessed[useful_col]
 
         if balance_ratio:
             print(f"Balancing the data with a ratio of {balance_ratio} between successful and unsuccessful passes...")
@@ -308,8 +309,6 @@ def get_passes_preprocessed(passes_df: pd.DataFrame, dataset: str = None, balanc
             passes_preprocessed.to_csv(csv_file, index = False)
 
     return passes_preprocessed
-
-
 
 
 
