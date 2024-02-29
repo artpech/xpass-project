@@ -13,7 +13,12 @@ from xpass.params import *
 from mplsoccer import Pitch
 
 st.title("Demo - xpass-project")
-st.write("Welcome to the xpass-project app.")
+st.header("Welcome to the xpass-project app.")
+st.write("""
+         Here is a pass randomly selected from the validation set of passes.
+         You can manually change the settings of the pass using the sidebar on the left
+         (number of players in both team, location of the players, passing player, end location of the pass)
+         """)
 
 
 # Load validation file
@@ -26,6 +31,7 @@ def innit_page_with_val_pass():
     val_freeze_frame = sample_pass.iloc[0]["freeze_frame"]
     val_freeze_frame = ast.literal_eval(val_freeze_frame)
     teammates = [dct for dct in val_freeze_frame if dct["teammate"]]
+    actor_index = [teammates.index(dct) for dct in teammates if dct["actor"]][0]
     opponents = [dct for dct in val_freeze_frame if not dct["teammate"]]
     end_loc_innit = ast.literal_eval(sample_pass.iloc[0]["pass_end_location"])
     end_loc_x_innit = end_loc_innit[0]
@@ -34,6 +40,7 @@ def innit_page_with_val_pass():
     teams_innit = {
         "Teammates" : {
             "n_players" : len(teammates),
+            "actor_index" : actor_index,
             "x" : [dct["location"][0] for dct in teammates],
             "y" : [dct["location"][1] for dct in teammates]
         },
@@ -44,9 +51,11 @@ def innit_page_with_val_pass():
         }
     }
 
-    return teams_innit, end_loc_x_innit, end_loc_y_innit
+    return sample_pass, teams_innit, end_loc_x_innit, end_loc_y_innit
 
-teams_innit, end_loc_x_innit, end_loc_y_innit = innit_page_with_val_pass()
+sample_pass, teams_innit, end_loc_x_innit, end_loc_y_innit = innit_page_with_val_pass()
+
+st.dataframe(sample_pass)
 
 with st.sidebar:
 
@@ -62,10 +71,16 @@ with st.sidebar:
             if team == "Teammates":
                 n_home_players = n_players
             col1, col2 = st.columns(2)
-            for i in range(n_players):
-                x_innit = teams_innit[team]["x"][i]
+            for i in range(int(n_players)):
+                try:
+                    x_innit = teams_innit[team]["x"][i]
+                except:
+                    x_innit = 60.0
                 x_i = col1.number_input(f"Coordinate x for player {i+1}", 0.0, 120.0, value = x_innit, key = f"{team}_{i}_x")
-                y_innit = teams_innit[team]["y"][i]
+                try:
+                    y_innit = teams_innit[team]["y"][i]
+                except:
+                    y_innit = 40.0
                 y_i = col2.number_input(f"Coordinate y for player {i+1}", 0.0, 80.0, value = y_innit, key = f"{team}_{i}_y")
                 player = {
                     "teammate" : team == "Teammates",
@@ -77,7 +92,11 @@ with st.sidebar:
 
 
     with st.expander("Other params"):
-        passer = st.selectbox("Pick the passer", [f"player {i+1}" for i in range(n_home_players)])
+        preselected_index = teams_innit["Teammates"]["actor_index"]
+        passer = st.selectbox(
+            "Pick the passer", [f"player {i+1}" for i in range(int(n_home_players))],
+            index = preselected_index
+            )
         passer = int(passer.split(" ")[-1])
         st.write("End location of the pass:")
         col1, col2 = st.columns(2)
