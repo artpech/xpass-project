@@ -214,15 +214,19 @@ def get_passes(events_df: pd.DataFrame, frames_df: pd.DataFrame) -> pd.DataFrame
     return passes
 
 
-def split_dataset(passes_df: pd.DataFrame, test_size: float, validation_size: float) -> tuple:
+def split_dataset(
+    passes_df: pd.DataFrame, test_size: float,
+    calibration_size: float, demo_size: float) -> tuple:
     """Split the full passes dataset into a train, a test and a validation dataset.
 
     Inputs:
         passes_df (pd.DataFrame): The pd.DataFrame of passes
         test_size (float): Should be between 0.0 and 1.0 and represent
             the proportion of the full dataset to include in the test split
-        validation_size (float): Should be between 0.0 and 1.0 and represent
-            the proportion of the full dataset to include in the test split
+        calibration_size (float): Should be between 0.0 and 1.0 and represent
+            the proportion of the full dataset to include in the calibration split
+        demo_size (float): Should be between 0.0 and 1.0 and represent
+            the proportion of the full dataset to include in the calibration split
 
     Returns:
         splitting (tuple): tuple containing train-test-validation split of inputed passes_df
@@ -230,33 +234,40 @@ def split_dataset(passes_df: pd.DataFrame, test_size: float, validation_size: fl
 
     train_csv_file = os.path.join(PROJECT_HOME, "data", f"train_{GENDER}_{SIZE}.csv")
     test_csv_file = os.path.join(PROJECT_HOME, "data", f"test_{GENDER}_{SIZE}.csv")
-    validation_csv_file = os.path.join(PROJECT_HOME, "data", f"validation_{GENDER}_{SIZE}.csv")
+    calibration_csv_file = os.path.join(PROJECT_HOME, "data", f"calibration_{GENDER}_{SIZE}.csv")
+    demo_csv_file = os.path.join(PROJECT_HOME, "data", f"demo_{GENDER}_{SIZE}.csv")
 
     if all([
         os.path.isfile(train_csv_file),
         os.path.isfile(test_csv_file),
-        os.path.isfile(validation_csv_file)
+        os.path.isfile(calibration_csv_file),
+        os.path.isfile(demo_csv_file)
         ]
     ):
         train = pd.read_csv(train_csv_file)
         test = pd.read_csv(test_csv_file)
-        validation = pd.read_csv(validation_csv_file)
+        calibration = pd.read_csv(calibration_csv_file)
+        demo = pd.read_csv(demo_csv_file)
 
     else:
 
-        if test_size + validation_size >= 1:
+        if test_size + calibration_size + demo_size >= 1:
             raise Exception("test_size and validation_size excede 1")
 
-        train_and_test, validation = train_test_split(passes_df, test_size = validation_size)
+        train_and_test, calibration_and_demo = train_test_split(passes_df, test_size = calibration_size + demo_size)
 
-        new_test_size = test_size / (1 - validation_size)
+        new_test_size = test_size / (1 - (calibration_size + demo_size))
         train, test = train_test_split(train_and_test, test_size = new_test_size)
+
+        new_demo_size = demo_size / (calibration_size + demo_size)
+        calibration, demo = train_test_split(calibration_and_demo, test_size = new_demo_size)
 
         train.to_csv(train_csv_file, index = False)
         test.to_csv(test_csv_file, index = False)
-        validation.to_csv(validation_csv_file, index = False)
+        calibration.to_csv(calibration_csv_file, index = False)
+        demo.to_csv(demo_csv_file, index = False)
 
-    splitting = (train, test, validation)
+    splitting = (train, test, calibration, demo)
     return splitting
 
 
@@ -309,7 +320,6 @@ def get_passes_preprocessed(passes_df: pd.DataFrame, dataset: str = None, balanc
             passes_preprocessed.to_csv(csv_file, index = False)
 
     return passes_preprocessed
-
 
 
 if __name__ == "__main__":
