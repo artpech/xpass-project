@@ -2,32 +2,37 @@ import streamlit as st
 
 import ast
 import os
+import pickle
 
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+from sklearn.ensemble import RandomForestClassifier
+
 from xpass.utils import plot_pass
+from xpass.loading import get_passes_preprocessed
 from xpass.params import *
 
 from mplsoccer import Pitch
 
+
 st.title("Demo - xpass-project")
-st.header("Welcome to the xpass-project app.")
+
+st.subheader("Welcome to the xpass-project app.")
+
 st.write("""
          Here is a pass randomly selected from the validation set of passes.
          You can manually change the settings of the pass using the sidebar on the left
-         (number of players in both team, location of the players, passing player, end location of the pass)
+         (number of players in both team, location of the players, passing player, end location of the pass).
          """)
 
 
-# Load validation file
-
 @st.cache
-def innit_page_with_val_pass():
-    val_file = os.path.join(PROJECT_HOME, "data", f"validation_{GENDER}_{SIZE}.csv")
-    validation = pd.read_csv(val_file)
-    sample_pass = validation.sample(1)
+def innit_page_with_demo_pass():
+    demo_file = os.path.join(PROJECT_HOME, "data", f"demo_{GENDER}_{SIZE}.csv")
+    demo = pd.read_csv(demo_file)
+    sample_pass = demo.sample(1)
     val_freeze_frame = sample_pass.iloc[0]["freeze_frame"]
     val_freeze_frame = ast.literal_eval(val_freeze_frame)
     teammates = [dct for dct in val_freeze_frame if dct["teammate"]]
@@ -53,11 +58,20 @@ def innit_page_with_val_pass():
 
     return sample_pass, teams_innit, end_loc_x_innit, end_loc_y_innit
 
-sample_pass, teams_innit, end_loc_x_innit, end_loc_y_innit = innit_page_with_val_pass()
+def load_model():
+    model_name = f"model_{SIZE}.pkl"
+    model_path = os.path.join(PROJECT_HOME, "data", "models", model_name)
+    model = pickle.load(open(model_path,"rb"))
+    return model
+
+sample_pass, teams_innit, end_loc_x_innit, end_loc_y_innit = innit_page_with_demo_pass()
+model = load_model()
 
 st.dataframe(sample_pass)
 
 with st.sidebar:
+
+    st.subheader("Change the pass parameters:")
 
     teams = ["Teammates", "Opponents"]
     freeze_frame = []
@@ -111,6 +125,24 @@ with st.sidebar:
         pass_angle = np.arccos((x_end - x_start) / pass_length)
     else:
         pass_angle = - 1 * np.arccos((x_end - x_start) / pass_length)
+
+    sample_pass_preprocessed = get_passes_preprocessed(sample_pass)
+    if st.button("Predict"):
+
+        outcome = model.predict(sample_pass_preprocessed)
+        outcome_map = {0 : "incomplete pass", 1 : "succesful pass"}
+        outcome = outcome_map[outcome[0]]
+
+        proba = model.predict_proba(sample_pass_preprocessed)
+        proba = round(100 * proba[0][1], 1)
+
+        col1, col2 = st.columns(2)
+        col1.write("Outcome prediction:")
+        col1.write(f"{outcome}")
+
+        col2.write("Success probability:")
+
+        col2.write(f"{proba}%")
 
 # st.write(f"Pass length: {pass_length}")
 # st.write(f"Pass angle: {pass_angle}")
