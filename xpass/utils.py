@@ -192,11 +192,11 @@ def plot_pass(
         start_location = [pass_row["location_x"], pass_row["location_y"]]
     except:
         start_location = pass_row["location"]
-        if isinstance(start_location, str):
-            start_location = ast.literal_eval(start_location)
-        end_location = pass_row["pass_end_location"]
-        if isinstance(end_location, str):
-            end_location = ast.literal_eval(end_location)
+    if isinstance(start_location, str):
+        start_location = ast.literal_eval(start_location)
+    end_location = pass_row["pass_end_location"]
+    if isinstance(end_location, str):
+        end_location = ast.literal_eval(end_location)
 
     ax.arrow(
         start_location[0],
