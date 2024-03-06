@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from sklearn.ensemble import RandomForestClassifier
+# from sklearn.ensemble import RandomForestClassifier
 
 from xpass.utils import plot_pass
 from xpass.loading import get_passes_preprocessed
@@ -17,46 +17,7 @@ from xpass.model import load_model
 from mplsoccer import Pitch
 
 
-# ------ FUNCTIONS ------
-
-#@st.cache
-# def init_page_with_demo_pass():
-#     demo_file = os.path.join(PROJECT_HOME, "data", f"demo_{GENDER}_{SIZE}.csv")
-#     demo = pd.read_csv(demo_file)
-#     sample_pass_init = demo.sample(1)
-#     sample_freeze_frame = sample_pass_init.iloc[0]["freeze_frame"]
-#     sample_freeze_frame = ast.literal_eval(sample_freeze_frame)
-#     teammates = [dct for dct in sample_freeze_frame if dct["teammate"]]
-#     actor_index = [teammates.index(dct) for dct in teammates if dct["actor"]][0]
-#     opponents = [dct for dct in sample_freeze_frame if not dct["teammate"]]
-#     end_loc_init = ast.literal_eval(sample_pass_init.iloc[0]["pass_end_location"])
-#     end_loc_x_init = end_loc_init[0]
-#     end_loc_y_init = end_loc_init[1]
-
-#     teams_init = {
-#         "Teammates" : {
-#             "n_players" : len(teammates),
-#             "actor_index" : actor_index,
-#             "x" : [dct["location"][0] for dct in teammates],
-#             "y" : [dct["location"][1] for dct in teammates]
-#         },
-#         "Opponents" : {
-#             "n_players" : len(opponents),
-#             "x" : [dct["location"][0] for dct in opponents],
-#             "y" : [dct["location"][1] for dct in opponents]
-#         }
-#     }
-
-#     return sample_pass_init, teams_init, end_loc_x_init, end_loc_y_init
-
-
-# ------ INITIALIZATION ------
-
-# sample_pass_init, teams_init, end_loc_x_init, end_loc_y_init = init_page_with_demo_pass()
-# sample_pass_preprocessed_init = get_passes_preprocessed(sample_pass_init)
-
-# model = load_model()
-
+# ------ INITIALIZE ------
 
 if "model" not in st.session_state:
     st.session_state["model"] = load_model()
@@ -101,7 +62,6 @@ if "end_loc_init" not in st.session_state:
         st.session_state["sample_pass_init"].iloc[0]["pass_end_location"])
 
 play_pattern_name = st.session_state["sample_pass_preprocessed_init"]["play_pattern_name"].iloc[0]
-st.write(play_pattern_name)
 pass_height_id = st.session_state["sample_pass_preprocessed_init"]["pass_height_id"].iloc[0]
 pass_body_part_name = st.session_state["sample_pass_preprocessed_init"]["pass_body_part_name"].iloc[0]
 
@@ -137,15 +97,22 @@ with st.sidebar:
     if "freeze_frame" not in st.session_state:
         st.session_state["freeze_frame"] = []
 
+    team_freeze_frames = {
+        "Teammates" : [],
+        "Opponents" : []
+    }
+
     for team in teams:
 
         with st.expander(f"{team}"):
+            team_freeze_frames[team] = []
             st.write()
             init_value = st.session_state["teams_init"][team]["n_players"]
             n_players = st.number_input(f"Number of players on team {team}", 1, 11, value = init_value, step = 1, format = "%i")
             if team == "Teammates":
                 n_home_players = n_players
             col1, col2 = st.columns(2)
+
             for i in range(int(n_players)):
                 try:
                     x_init = st.session_state["teams_init"][team]["x"][i]
@@ -163,8 +130,9 @@ with st.sidebar:
                     "keeper" : False,
                     "location" : [ x_i, y_i ]
                 }
-                st.session_state["freeze_frame"].append(player)
+                team_freeze_frames[team].append(player)
 
+    st.session_state["freeze_frame"] = team_freeze_frames["Teammates"] + team_freeze_frames["Opponents"]
 
     with st.expander("Other params"):
         preselected_index = st.session_state["teams_init"]["Teammates"]["actor_index"]
@@ -195,16 +163,8 @@ with st.sidebar:
     data = [[x_start, y_start, play_pattern_name, pass_angle, pass_height_id,
              pass_body_part_name, st.session_state["freeze_frame"], [x_end, y_end]]]
 
-    # st.write(data)
-
-    # data = [[x_start, y_start,
-    #     x_end, y_end],
-    #     pass_angle,
-    #     st.session_state["freeze_frame"]
-    # ]]
-
     pass_df = pd.DataFrame(data = data, columns = cols)
-    st.write(len(st.session_state["freeze_frame"]))
+    st.write(f"{len(st.session_state['freeze_frame'])} players in the freeze frame")
 
     # ------ PREDICTION ------
     st.write("")
